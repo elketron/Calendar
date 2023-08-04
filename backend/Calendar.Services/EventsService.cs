@@ -40,23 +40,32 @@ public class EventsService
 
     public async Task<Event?> Get(int id)
     {
-        return await _context.Events.Include(e => e.Notifications).FirstOrDefaultAsync(e => e.Id == id);
+        return await _context.Events
+            .Include(e => e.Notifications)
+            .FirstOrDefaultAsync(e => e.Id == id);
     }
 
     public async Task<List<Event>> GetAll()
     {
-        var events = await _context.Notifications.Include(n => n.Event).ToListAsync();
+        return await _context.Events
+            .Include(n => n.Notifications)
+            .ToListAsync();
 
-        return events.Select(e => e.Event).ToList();
     }
     public async Task<List<Event>> GetToday(DateTime date)
     {
-        return await _context.Events.Include(e => e.Notifications).Where(t => t.StartAt >= date && t.StartAt <= date.AddDays(1)).ToListAsync();
+        return await _context.Events
+            .Include(e => e.Notifications)
+            .Where(t => t.StartAt >= date && t.StartAt <= date.AddDays(1))
+            .ToListAsync();
     }
 
     public async Task<List<Event>> GetWeek(DateTime date)
     {
-        return await _context.Events.Include(e => e.Notifications).Where(t => t.StartAt >= date && t.StartAt <= date.AddDays(7)).ToListAsync();
+        return await _context.Events
+            .Include(e => e.Notifications)
+            .Where(t => t.StartAt >= date && t.StartAt <= date.AddDays(7))
+            .ToListAsync();
     }
 
     public async Task<bool> AddNotification(int id, Notification notification)

@@ -34,7 +34,7 @@ public class TodoController : ControllerBase
         return todo;
     }
 
-    [HttpGet("quadrant/{id}")]
+    [HttpGet("quadrant")]
     public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodosByQuadrant(Quadrant quadrant)
     {
         return await _todoService.GetByQuadrant(quadrant);
