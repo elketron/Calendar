@@ -1,194 +1,85 @@
 using Calendar.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Calendar.Data.Repositories;
 
 namespace CalendarServices.Services;
 
 public class TodoService
 {
-    private readonly CalendarContext _context;
+    private readonly ITodoRepository _todoRepository;
 
-    public TodoService(CalendarContext context)
+    public TodoService(ITodoRepository todoRepository)
     {
-        _context = context;
+        _todoRepository = todoRepository;
     }
 
     public async Task<TodoItem> Create(TodoItem todo)
     {
-        _context.TodoItems.Add(todo);
-        await _context.SaveChangesAsync();
+        await _todoRepository.AddAsync(todo);
         return todo;
     }
 
     public async Task<TodoItem> Update(TodoItem todo)
     {
-        _context.TodoItems.Update(todo);
-        await _context.SaveChangesAsync();
+        await _todoRepository.UpdateAsync(todo);
         return todo;
     }
 
-    public async Task<TodoItem?> Delete(int id)
+    public async Task<bool> Delete(int id)
     {
-        var todo = await _context.TodoItems.FindAsync(id);
-        if (todo != null)
-        {
-            _context.TodoItems.Remove(todo);
-            await _context.SaveChangesAsync();
-        }
-        return todo;
+        return await _todoRepository.DeleteAsync(id);
     }
 
     public async Task<TodoItem?> Get(int id)
     {
-        return await _context.TodoItems.Join(_context.Categories,
-            todo => todo.Id,
-            category => category.Id,
-            (todo, category) => new TodoItem
-            {
-                Id = todo.Id,
-                Title = todo.Title,
-                Description = todo.Description,
-                DueAt = todo.DueAt,
-                IsDone = todo.IsDone,
-                Quadrant = todo.Quadrant,
-                Categories = todo.Categories
-            }).FirstOrDefaultAsync(todo => todo.Id == id);
+        return await _todoRepository.GetByIdAsync(id);
     }
 
     public async Task<List<TodoItem>> GetAll()
     {
-        return await _context.TodoItems.Join(_context.Categories,
-            todo => todo.Id,
-            category => category.Id,
-            (todo, category) => new TodoItem
-            {
-                Id = todo.Id,
-                Title = todo.Title,
-                Description = todo.Description,
-                DueAt = todo.DueAt,
-                IsDone = todo.IsDone,
-                Quadrant = todo.Quadrant,
-                Categories = todo.Categories
-            }).ToListAsync();
+        return await _todoRepository.GetAllAsync();
     }
 
-    public async Task<List<TodoItem>> GetByToday(DateTime date)
+    public async Task<List<TodoItem>> GetByToday(int userId)
     {
-        return await _context.TodoItems.Join(_context.Categories,
-            todo => todo.Id,
-            category => category.Id,
-            (todo, category) => new TodoItem
-            {
-                Id = todo.Id,
-                Title = todo.Title,
-                Description = todo.Description,
-                DueAt = todo.DueAt,
-                IsDone = todo.IsDone,
-                Quadrant = todo.Quadrant,
-                Categories = todo.Categories
-            }).Where(todo => todo.DueAt == date).ToListAsync();
+        return await _todoRepository.GetDueTodayAsync(userId);
     }
 
-    public async Task<List<TodoItem>> GetByQuadrant(Quadrant quadrant)
+    public async Task<List<TodoItem>> GetByQuadrant(int userId, Quadrant quadrant)
     {
-        return await _context.TodoItems.Join(_context.Categories,
-            todo => todo.Id,
-            category => category.Id,
-            (todo, category) => new TodoItem
-            {
-                Id = todo.Id,
-                Title = todo.Title,
-                Description = todo.Description,
-                DueAt = todo.DueAt,
-                IsDone = todo.IsDone,
-                Quadrant = todo.Quadrant,
-                Categories = todo.Categories
-            }).Where(todo => todo.Quadrant == quadrant).ToListAsync();
+        return await _todoRepository.GetQuadrantTodosAsync(userId, quadrant);
     }
 
-    public async Task<List<TodoItem>> GetByQuadrantAndDate(Quadrant quadrant, DateTime date)
+    public async Task<List<TodoItem>> GetByQuadrantAndDate(int userId, Quadrant quadrant, DateTime date)
     {
-        return await _context.TodoItems.Join(_context.Categories,
-            todo => todo.Id,
-            category => category.Id,
-            (todo, category) => new TodoItem
-            {
-                Id = todo.Id,
-                Title = todo.Title,
-                Description = todo.Description,
-                DueAt = todo.DueAt,
-                IsDone = todo.IsDone,
-                Quadrant = todo.Quadrant,
-                Categories = todo.Categories
-            }).Where(todo => todo.Quadrant == quadrant && todo.DueAt == date).ToListAsync();
+        var todos = await _todoRepository.GetQuadrantTodosAsync(userId, quadrant);
+        return todos.Where(t => t.DueAt == date.Date).ToList();
     }
 
-    public async Task<List<TodoItem>> GetDone()
+    public async Task<List<TodoItem>> GetDone(int userId)
     {
-        return await _context.TodoItems.Join(_context.Categories,
-            todo => todo.Id,
-            category => category.Id,
-            (todo, category) => new TodoItem
-            {
-                Id = todo.Id,
-                Title = todo.Title,
-                Description = todo.Description,
-                DueAt = todo.DueAt,
-                IsDone = todo.IsDone,
-                Quadrant = todo.Quadrant,
-                Categories = todo.Categories
-            }).Where(t => t.IsDone).ToListAsync();
+        var todos = await _todoRepository.GetAllAsync();
+        return todos.Where(t => t.IsDone && t.UserId == userId).ToList();
     }
 
-    public async Task<List<TodoItem>> GetNotDone()
+    public async Task<List<TodoItem>> GetNotDone(int userId)
     {
-        return await _context.TodoItems.Join(_context.Categories,
-            todo => todo.Id,
-            category => category.Id,
-            (todo, category) => new TodoItem
-            {
-                Id = todo.Id,
-                Title = todo.Title,
-                Description = todo.Description,
-                DueAt = todo.DueAt,
-                IsDone = todo.IsDone,
-                Quadrant = todo.Quadrant,
-                Categories = todo.Categories
-            }).Where(t => !t.IsDone).ToListAsync();
+        var todos = await _todoRepository.GetAllAsync();
+        return todos.Where(t => !t.IsDone && t.UserId == userId).ToList();
     }
 
     public async Task<TodoItem?> AddCategory(int todoId, int categoryId)
     {
-        var todo = await _context.TodoItems.FindAsync(todoId);
-        var category = await _context.Categories.FindAsync(categoryId);
-        if (todo != null && category != null)
-        {
-            todo.Categories!.Add(category);
-            await _context.SaveChangesAsync();
-        }
-        return todo;
+        return await _todoRepository.AddCategoryById(todoId, categoryId);
     }
 
     public async Task<TodoItem?> ChangeQuadrant(int todoId, Quadrant quadrant)
     {
-        var todo = await _context.TodoItems.FindAsync(todoId);
-        if (todo != null)
-        {
-            todo.Quadrant = quadrant;
-            await _context.SaveChangesAsync();
-        }
-        return todo;
-
+        return await _todoRepository.ChangeQuadrantAsync(todoId, quadrant);
     }
 
     public async Task<TodoItem?> RemoveCategory(int todoId, int categoryId)
     {
-        var todo = await _context.TodoItems.FindAsync(todoId);
-        var category = await _context.Categories.FindAsync(categoryId);
-        if (todo != null && category != null)
-        {
-            todo.Categories!.Remove(category);
-            await _context.SaveChangesAsync();
-        }
-        return todo;
+        return await _todoRepository.RemoveCategoryAsync(todoId, categoryId);
     }
 }

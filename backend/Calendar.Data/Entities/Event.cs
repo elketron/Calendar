@@ -20,8 +20,9 @@ public class Event
 
     public int? TodoItemId { get; set; }
     public TodoItem? TodoItem { get; set; }
-
-
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+    
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }
 

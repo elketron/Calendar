@@ -10,6 +10,7 @@ public class CalendarContext : DbContext
     public DbSet<TodoItem> TodoItems { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Notification> Notifications { get; set; } = null!;
+    public DbSet<User> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -17,6 +18,6 @@ public class CalendarContext : DbContext
             .HasMany(c => c.Categories)
             .WithMany(t => t.TodoItems)
             .UsingEntity("TodoItemCategory");
-    
+
     }
 }

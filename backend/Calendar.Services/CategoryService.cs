@@ -1,50 +1,41 @@
 using Calendar.Models.Entities;
-using Microsoft.EntityFrameworkCore;
+using Calendar.Data.Repositories;
 
 namespace CalendarServices.Services;
 
 public class CategoryService
 {
-    private readonly CalendarContext _context;
+    private readonly ICategoryRepository _categoryRepository;
 
-    public CategoryService(CalendarContext context)
+    public CategoryService(ICategoryRepository categoryRepository)
     {
-        _context = context;
+        _categoryRepository = categoryRepository;
     }
 
-    public async Task<Category> Create(string name)
+    public async Task<Category> Create(int userId,string name)
     {
-        var category = new Category { Name = name };
-        _context.Categories.Add(category);
-        await _context.SaveChangesAsync();
+        var category = new Category
+        {
+            Name = name,
+            UserId = userId
+        };
+        await _categoryRepository.AddAsync(category);
         return category;
     }
 
     public async Task<Category> Update(Category category)
     {
-        _context.Categories.Update(category);
-        await _context.SaveChangesAsync();
+        await _categoryRepository.UpdateAsync(category);
         return category;
     }
 
-    public async Task<Category?> Delete(int id)
+    public async Task<bool> Delete(int id)
     {
-        var category = await _context.Categories.FindAsync(id);
-        if (category != null)
-        {
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
-        }
-        return category;
+        return await _categoryRepository.DeleteAsync(id);
     }
 
-    public async Task<Category?> Get(int id)
+    public async Task<List<Category>> GetAll(int id)
     {
-        return await _context.Categories.FindAsync(id);
-    }
-
-    public async Task<List<Category>> GetAll()
-    {
-        return await _context.Categories.ToListAsync();
+        return await _categoryRepository.GetByUserIdAsync(id);
     }
 }

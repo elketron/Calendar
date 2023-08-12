@@ -23,6 +23,9 @@ public class TodoItem
     public Quadrant Quadrant { get; set; }
     public DateTime? DueAt { get; set; }
 
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+
     public ICollection<Category> Categories { get; set; } = new List<Category>();
 
 }

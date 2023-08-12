@@ -1,88 +1,57 @@
 using Calendar.Models.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
+using Calendar.Data.Repositories;
 
 namespace CalendarServices.Services;
 
 public class EventsService
 {
-    private readonly CalendarContext _context;
+    private readonly IEventRepository _eventsRepository;
 
-    public EventsService(CalendarContext context)
+    public EventsService(IEventRepository eventsRepository)
     {
-        _context = context;
+        _eventsRepository = eventsRepository;
     }
 
     public async Task<Event> Create(Event @event)
     {
-        _context.Events.Add(@event);
-        await _context.SaveChangesAsync();
+        await _eventsRepository.AddAsync(@event);
         return @event;
     }
 
     public async Task<Event> Update(Event @event)
     {
-        _context.Events.Update(@event);
-        await _context.SaveChangesAsync();
+        await _eventsRepository.UpdateAsync(@event);
         return @event;
     }
 
-    public async Task<Event?> Delete(int id)
+    public async Task<bool> Delete(int id)
     {
-        var @event = await _context.Events.FindAsync(id);
-        if (@event != null)
-        {
-            _context.Events.Remove(@event);
-            await _context.SaveChangesAsync();
-        }
-        return @event;
+        return await _eventsRepository.DeleteAsync(id);
     }
 
     public async Task<Event?> Get(int id)
     {
-        return await _context.Events
-            .Include(e => e.Notifications)
-            .FirstOrDefaultAsync(e => e.Id == id);
+        return await _eventsRepository.GetByIdAsync(id);
     }
 
-    public async Task<List<Event>> GetAll()
+    public async Task<List<Event>> GetToday(int userId)
     {
-        return await _context.Events
-            .Include(n => n.Notifications)
-            .ToListAsync();
-
-    }
-    public async Task<List<Event>> GetToday(DateTime date)
-    {
-        return await _context.Events
-            .Include(e => e.Notifications)
-            .Where(t => t.StartAt >= date && t.StartAt <= date.AddDays(1))
-            .ToListAsync();
+        return await _eventsRepository.GetTodayEventsAsync(userId);
     }
 
-    public async Task<List<Event>> GetWeek(DateTime date)
+    public async Task<List<Event>> GetWeek(int userId, DateTime date)
     {
-        return await _context.Events
-            .Include(e => e.Notifications)
-            .Where(t => t.StartAt >= date && t.StartAt <= date.AddDays(7))
-            .ToListAsync();
+        return await _eventsRepository.GetWeekEventsAsync(userId, date);
     }
 
     public async Task<bool> AddNotification(int id, Notification notification)
     {
-        var @event = await _context.Events.FindAsync(id);
-        if (@event == null)
-        {
-            return false;
-        }
-        @event.Notifications.Add(notification);
-        await _context.SaveChangesAsync();
-        return true;
+        return await _eventsRepository.AddNotificationAsync(id, notification) != null;
     }
 
     public async Task<bool> RemoveNotification(int id, int notificationId)
     {
-        var @event = await _context.Events.FindAsync(id);
+        var @event = await _eventsRepository.GetByIdAsync(id);
         if (@event == null)
         {
             return false;
@@ -93,7 +62,7 @@ public class EventsService
             return false;
         }
         @event.Notifications.Remove(notification);
-        await _context.SaveChangesAsync();
+        await _eventsRepository.UpdateAsync(@event);
         return true;
     }
 }

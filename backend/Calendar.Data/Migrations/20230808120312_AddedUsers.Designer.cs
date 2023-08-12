@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Calendar.Data.Migrations
 {
     [DbContext(typeof(CalendarContext))]
-    [Migration("20230803132233_UpdateManyToMany")]
-    partial class UpdateManyToMany
+    [Migration("20230808120312_AddedUsers")]
+    partial class AddedUsers
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -37,7 +37,12 @@ namespace Calendar.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Categories");
                 });
@@ -86,9 +91,14 @@ namespace Calendar.Data.Migrations
                     b.Property<int?>("TodoItemId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TodoItemId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Events");
                 });
@@ -143,9 +153,39 @@ namespace Calendar.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("TodoItems");
+                });
+
+            modelBuilder.Entity("Calendar.Models.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("TodoItemCategory", b =>
@@ -163,13 +203,32 @@ namespace Calendar.Data.Migrations
                     b.ToTable("TodoItemCategory");
                 });
 
+            modelBuilder.Entity("Calendar.Models.Entities.Category", b =>
+                {
+                    b.HasOne("Calendar.Models.Entities.User", "User")
+                        .WithMany("Categories")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Calendar.Models.Entities.Event", b =>
                 {
                     b.HasOne("Calendar.Models.Entities.TodoItem", "TodoItem")
                         .WithMany()
                         .HasForeignKey("TodoItemId");
 
+                    b.HasOne("Calendar.Models.Entities.User", "User")
+                        .WithMany("Events")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("TodoItem");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Calendar.Models.Entities.Notification", b =>
@@ -179,6 +238,17 @@ namespace Calendar.Data.Migrations
                         .HasForeignKey("EventId");
 
                     b.Navigation("Event");
+                });
+
+            modelBuilder.Entity("Calendar.Models.Entities.TodoItem", b =>
+                {
+                    b.HasOne("Calendar.Models.Entities.User", "User")
+                        .WithMany("TodoItems")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TodoItemCategory", b =>
@@ -199,6 +269,15 @@ namespace Calendar.Data.Migrations
             modelBuilder.Entity("Calendar.Models.Entities.Event", b =>
                 {
                     b.Navigation("Notifications");
+                });
+
+            modelBuilder.Entity("Calendar.Models.Entities.User", b =>
+                {
+                    b.Navigation("Categories");
+
+                    b.Navigation("Events");
+
+                    b.Navigation("TodoItems");
                 });
 #pragma warning restore 612, 618
         }
